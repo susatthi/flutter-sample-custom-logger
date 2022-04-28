@@ -1,6 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_sample_custom_logger/logger.dart';
 
 void main() {
+  logger.v('Hello logger!');
+  logger.d(1000);
+  logger.i(true);
+  logger.w([1, 2, 3]);
+  logger.e({'key': 'key', 'value': 'value'});
+  logger.wtf(Exception('例外もいけます'));
+  logger.i(() => '関数もいけます');
+
+  logger.w('Hello logger warning!', Exception('loggerの例外'), StackTrace.current);
+  logger.w('Hello logger warning!', Exception('StackTraceなし'));
+
   runApp(const MyApp());
 }
 
@@ -35,6 +47,7 @@ class _MyHomePageState extends State<MyHomePage> {
     setState(() {
       _counter++;
     });
+    logger.i(_counter);
   }
 
   @override
