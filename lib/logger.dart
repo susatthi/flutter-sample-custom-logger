@@ -1,7 +1,3 @@
-// Copyright 2022 susatthi All rights reserved.
-// Use of this source code is governed by a MIT license that can be
-// found in the LICENSE file.
-
 import 'package:intl/intl.dart';
 import 'package:logger/logger.dart';
 //ignore: depend_on_referenced_packages
@@ -119,11 +115,9 @@ class SinglePrettyPrinter extends LogPrinter {
       stackTraceLines = _getStackTrace();
     }
 
-    return _formatAndPrint(
+    return _formatMessage(
       level: event.level,
       message: _stringifyMessage(event.message),
-      time: printTime ? _getCurrentTime() : null,
-      caller: printCaller ? _getCaller() : null,
       error: event.error?.toString(),
       stackTrace: stackTraceLines,
     );
@@ -166,7 +160,7 @@ class SinglePrettyPrinter extends LogPrinter {
         continue;
       }
       final replaced = line.replaceFirst(RegExp(r'#\d+\s+'), '');
-      formatted.add(' $_prefixStackTrace #$count   $replaced');
+      formatted.add('$_prefixStackTrace #$count   $replaced');
       if (++count == stackTraceMethodCount) {
         break;
       }
@@ -219,52 +213,59 @@ class SinglePrettyPrinter extends LogPrinter {
     }
   }
 
-  /// フォーマットして出力する
-  List<String> _formatAndPrint({
+  /// メッセージをフォーマットする
+  List<String> _formatMessage({
     required Level level,
     required String message,
-    String? time,
-    String? caller,
     String? error,
     List<String>? stackTrace,
   }) {
-    final buffer = <String>[];
     final color = _getLevelColor(level);
-
-    if (printEmojis) {
-      buffer.add(color(_levelEmojis[level]!));
-    }
-    if (loggerName != null) {
-      buffer.add(color(loggerName!));
-    }
-    if (printLevels) {
-      buffer.add(color(_levelLabels[level]!));
-    }
-    if (time != null) {
-      buffer.add(color(time));
-    }
-    if (caller != null) {
-      buffer.add(color(caller));
-    }
-
+    final fixed = _formatFixed(level: level);
     final logs = <String>[];
-    if (buffer.isNotEmpty) {
-      logs.add('${buffer.join(' ')}${color(':')} ${color(message)}');
-    } else {
-      logs.add(color(message));
-    }
+
+    // メッセージを出力する
+    logs.add(color('$fixed$message'));
 
     // エラーがあれば次の行に追記する
     if (error != null) {
-      logs.add(color(error));
+      logs.add(color('$fixed$_prefixStackTrace $error'));
     }
 
     // stackTrace があれば次の行に追記する
     if (stackTrace != null && stackTrace.isNotEmpty) {
       for (final line in stackTrace) {
-        logs.add(color(line));
+        logs.add(color('$fixed$line'));
       }
     }
     return logs;
+  }
+
+  /// 固定文をフォーマットして返す
+  String _formatFixed({
+    required Level level,
+  }) {
+    final buffer = <String>[];
+
+    if (printEmojis) {
+      buffer.add(_levelEmojis[level]!);
+    }
+    if (loggerName != null) {
+      buffer.add(loggerName!);
+    }
+    if (printLevels) {
+      buffer.add(_levelLabels[level]!);
+    }
+    if (printTime) {
+      buffer.add(_getCurrentTime());
+    }
+    if (printCaller) {
+      final caller = _getCaller();
+      if (caller != null) {
+        buffer.add(caller);
+      }
+    }
+
+    return buffer.isNotEmpty ? '${buffer.join(' ')}: ' : '';
   }
 }
